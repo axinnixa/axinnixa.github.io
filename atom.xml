@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://axinnixa.github.io</id>
     <title>axin_blog</title>
-    <updated>2021-02-04T07:53:37.321Z</updated>
+    <updated>2021-02-04T10:24:22.304Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://axinnixa.github.io"/>
     <link rel="self" href="https://axinnixa.github.io/atom.xml"/>
@@ -11,44 +11,578 @@
     <icon>https://axinnixa.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, axin_blog</rights>
     <entry>
-        <title type="html"><![CDATA[axin ]]></title>
-        <id>https://axinnixa.github.io/post/axin/</id>
-        <link href="https://axinnixa.github.io/post/axin/">
+        <title type="html"><![CDATA[Docker中mongo副本集一直Restarting处理过程]]></title>
+        <id>https://axinnixa.github.io/post/docker-zhong-mongo-fu-ben-ji-yi-zhi-restarting-chu-li-guo-cheng/</id>
+        <link href="https://axinnixa.github.io/post/docker-zhong-mongo-fu-ben-ji-yi-zhi-restarting-chu-li-guo-cheng/">
         </link>
-        <updated>2021-02-04T07:18:46.000Z</updated>
-        <content type="html"><![CDATA[<p>aslkfjasdkljfsdlafldsa</p>
+        <updated>2021-02-04T09:24:51.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="http://image.axinblog.com/FsgN1JeeR8oW9OPO2Ps9N9nfp7GZ-www.axinblog.com" alt="妹子" loading="lazy"></figure>
+<h1 id="参考文献">参考文献</h1>
+<p><a href="https://blog.csdn.net/JHC23/article/details/81099281">docker 下的mongodb 日志查看</a></p>
+<h1 id="环境说明">环境说明</h1>
+<ul>
+<li>docker-compose<code>docker-compose version 1.24.1, build 4667896b</code></li>
+<li>docker<code>Docker version 19.03.11, build 42e35e61f3</code></li>
+<li>mongo<code>v4.2.7</code></li>
+<li>centos<code>CentOS Linux release 7.8.2003 (Core)</code></li>
+</ul>
+<h1 id="问题说明">问题说明</h1>
+<p>docker mongo副本集无法启动（如下）</p>
+<pre><code>➜  axinblog docker-compose ps   
+        Name                      Command                 State                       Ports              
+-------------------------------------------------------------------------------------------------------------
+...                                      
+mongodb_primary     bash -c chmod 400 /data/mo ...   Restarting                                       
+mongodb_replica_1   bash -c chmod 400 /data/mo ...   Up           0.0.0.0:27018-&gt;27017/tcp            
+mongodb_replica_2   bash -c chmod 400 /data/mo ...   Up           0.0.0.0:27019-&gt;27017/tcp            
+...
+</code></pre>
+<h1 id="解决过程">解决过程</h1>
+<h3 id="查看日志">查看日志</h3>
+<p>docker ps 先找到出问题的容器ID</p>
+<pre><code>➜  containers docker ps
+CONTAINER ID        IMAGE                       COMMAND                  CREATED             STATUS                           PORTS                                      NAMES
+4736e67fbd2b        mongodb_primary   &quot;bash -c 'chmod 400 …&quot;   4 months ago        Restarting (14) 34 seconds ago                                              mongodb_primary
+</code></pre>
+<p>方式1：</p>
+<pre><code>cd 
+vim 4736e67fbd2bf513a70c115312f2bc208a1767fb4da9a23937227ddbc5bff1c0-json.log
+</code></pre>
+<p>方式2:</p>
+<p>docker logs -f -t --since=&quot;日期&quot; --tail=日志记录数 容器ID</p>
+<pre><code>docker logs -f -t --since=&quot;2020-11-13&quot; --tail=1000 4736e67fbd2b
+</code></pre>
+<pre><code>2020-11-13T09:01:16.191606239Z 2020-11-13T09:01:16.191+0000 I  CONTROL  [main] Automatically disabling TLS 1.0, to force-enable TLS 1.0 specify --sslDisabledProtocols 'none'
+2020-11-13T09:01:16.196272875Z 2020-11-13T09:01:16.196+0000 W  ASIO     [main] No TransportLayer configured during NetworkInterface startup
+2020-11-13T09:01:16.287181977Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten] MongoDB starting : pid=1 port=27017 dbpath=/data/db 64-bit host=4736e67fbd2b
+2020-11-13T09:01:16.287216770Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten] db version v4.2.7
+2020-11-13T09:01:16.287221031Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten] git version: 51d9fe12b5d19720e72dcd7db0f2f17dd9a19212
+2020-11-13T09:01:16.287224322Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten] OpenSSL version: OpenSSL 1.1.1  11 Sep 2018
+2020-11-13T09:01:16.287249167Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten] allocator: tcmalloc
+2020-11-13T09:01:16.287253400Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten] modules: none
+2020-11-13T09:01:16.287256698Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten] build environment:
+2020-11-13T09:01:16.287259765Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten]     distmod: ubuntu1804
+2020-11-13T09:01:16.287262814Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten]     distarch: x86_64
+2020-11-13T09:01:16.287265993Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten]     target_arch: x86_64
+2020-11-13T09:01:16.287268955Z 2020-11-13T09:01:16.286+0000 I  CONTROL  [initandlisten] options: { net: { bindIp: &quot;*&quot; }, replication: { replSet: &quot;mongos&quot; }, security: { authorization: &quot;enabled&quot;, keyFile: &quot;/data/mongodb.key&quot; } }
+2020-11-13T09:01:16.287274257Z 2020-11-13T09:01:16.286+0000 E  NETWORK  [initandlisten] Failed to unlink socket file /tmp/mongodb-27017.sock Operation not permitted
+2020-11-13T09:01:16.287290311Z 2020-11-13T09:01:16.286+0000 F  -        [initandlisten] Fatal Assertion 40486 at src/mongo/transport/transport_layer_asio.cpp 684
+2020-11-13T09:01:16.287293285Z 2020-11-13T09:01:16.286+0000 F  -        [initandlisten] 
+2020-11-13T09:01:16.287295907Z 
+2020-11-13T09:01:16.287298537Z ***aborting after fassert() failure
+</code></pre>
+<h3 id="分析问题">分析问题</h3>
+<p>Failed to unlink socket file /tmp/mongodb-27017.sock Operation not permitted 这问题看起来是没有权限的问题谷歌一下</p>
+<h3 id="解决方式">解决方式</h3>
+<h4 id="方法一映射tmp-使mongodb-27017文件拥有相应权限">方法一：映射tmp 使mongodb-27017文件拥有相应权限</h4>
+<ol>
+<li>
+<p>修改docker-compose.yml，增加 ./db/mongodb/primary/tmp:/tmp卷映射</p>
+<pre><code>$ vim docker-compose.yml
+mongodb_primary:
+ container_name: mongodb_primary
+ build:
+   context: ./db/mongodb/docker/
+ ports:
+   - &quot;27017:27017&quot;
+ restart: always
+ environment:
+   MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+   MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+   MONGO_DATA_DIR: ${MONGO_DATA_DIR}
+   MONGO_LOG_DIR: ${MONGO_LOG_DIR}
+ volumes:
+   - ./db/mongodb/primary/data:/data/db
+   - ./db/mongodb/primary/example_db:/data/example_db
+   - ./db/mongodb/primary/logs:/data/logs
+   - ./db/mongodb/mongodb.key:/data/mongodb.key
+   - ./db/mongodb/primary/tmp:/tmp
+</code></pre>
+</li>
+<li>
+<p>重新build启动容器</p>
+<pre><code>$ docker-compose stop
+// 注：停止正在运行的容器，可以通过docker-compose start 再次启动
+$ docker-compose down --volumes
+// 注：–volumes，删除已经在compose文件中定义的和匿名的附在容器上的数据卷
+docker-compose build --no-cache
+// 注：–no-cache 构建镜像过程中不使用缓存
+
+到你的tmp目录中查看是否有mongodb-27017.sock，有表示成功
+➜  tmp ll
+total 0
+srwx------ 1 polkitd ssh_keys 0 Nov 13 17:43 mongodb-27017.sock
+</code></pre>
+</li>
+<li>
+<p>如果发现重新build没有目录生成一般都是权限不足</p>
+<p>首先进入容器查看mongo用的权限是什么</p>
+<pre><code>$ docker-compose exec mongodb_primary bash
+root@f52e93626d9f:/# cat /etc/pa
+···
+mongodb:x:999:999::/home/mongodb:/bin/sh
+···
+</code></pre>
+<p>设置你本地目录权限与mongo一致就行了</p>
+<blockquote>
+<p>chown 999:999 tmp</p>
+</blockquote>
+</li>
+</ol>
+<h4 id="方法二删除mongodb-27017sock重启mongo服务">方法二：删除mongodb-27017.sock，重启mongo服务</h4>
+<blockquote>
+<p>sudo rm /tmp/mongodb-27017.sock // 因为我这边是进不了容器的，所以无法使用</p>
+</blockquote>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Hello Gridea]]></title>
-        <id>https://axinnixa.github.io/post/hello-gridea/</id>
-        <link href="https://axinnixa.github.io/post/hello-gridea/">
+        <title type="html"><![CDATA[Golang 链式调用太长如何折行]]></title>
+        <id>https://axinnixa.github.io/post/golang-lian-shi-diao-yong-tai-chang-ru-he-zhe-xing/</id>
+        <link href="https://axinnixa.github.io/post/golang-lian-shi-diao-yong-tai-chang-ru-he-zhe-xing/">
         </link>
-        <updated>2018-12-11T16:00:00.000Z</updated>
-        <summary type="html"><![CDATA[<p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
-✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
-✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
-<!-- more -->
-<p><a href="https://github.com/getgridea/gridea">Github</a><br>
-<a href="https://gridea.dev/">Gridea 主页</a><br>
-<a href="http://fehey.com/">示例网站</a></p>
-<h2 id="特性">特性👇</h2>
-<p>📝  你可以使用最酷的 <strong>Markdown</strong> 语法，进行快速创作</p>
-<p>🌉  你可以给文章配上精美的封面图和在文章任意位置插入图片</p>
-<p>🏷️  你可以对文章进行标签分组</p>
-<p>📋  你可以自定义菜单，甚至可以创建外部链接菜单</p>
-<p>💻  你可以在 <strong>Windows</strong>，<strong>MacOS</strong> 或 <strong>Linux</strong> 设备上使用此客户端</p>
-<p>🌎  你可以使用 <strong>𝖦𝗂𝗍𝗁𝗎𝖻 𝖯𝖺𝗀𝖾𝗌</strong> 或 <strong>Coding Pages</strong> 向世界展示，未来将支持更多平台</p>
-<p>💬  你可以进行简单的配置，接入 <a href="https://github.com/gitalk/gitalk">Gitalk</a> 或 <a href="https://github.com/SukkaW/DisqusJS">DisqusJS</a> 评论系统</p>
-<p>🇬🇧  你可以使用<strong>中文简体</strong>或<strong>英语</strong></p>
-<p>🌁  你可以任意使用应用内默认主题或任意第三方主题，强大的主题自定义能力</p>
-<p>🖥  你可以自定义源文件夹，利用 OneDrive、百度网盘、iCloud、Dropbox 等进行多设备同步</p>
-<p>🌱 当然 <strong>Gridea</strong> 还很年轻，有很多不足，但请相信，它会不停向前 🏃</p>
-<p>未来，它一定会成为你离不开的伙伴</p>
-<p>尽情发挥你的才华吧！</p>
-<p>😘 Enjoy~</p>
+        <updated>2021-02-04T09:24:37.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="http://image.axinblog.com/FkIPi6ANnehabSp3ahSygIhqX6rk" alt="妹子图" loading="lazy"></figure>
+<p>写链式时会有以下情况，可是强迫症犯了，想多行显示方便阅读。</p>
+<p>示例：</p>
+<pre><code>s.dao.Mgo.SetDatabase(&quot;****&quot;).SetCollection(&quot;***&quot;).InsertOne(bson.M{&quot;name&quot;: &quot;axin&quot;, &quot;remark&quot;: &quot;嘿嘿嘿。。。&quot;})
+</code></pre>
+<p>改为：</p>
+<pre><code>res := s.dao.Mgo.SetDatabase(&quot;dapeimall_prod&quot;).
+		SetCollection(&quot;numbers&quot;).
+		InsertOne(bson.M{&quot;name&quot;: &quot;axin&quot;, &quot;value&quot;: &quot;嘿嘿嘿&quot;})
+	fmt.Println(res)
+</code></pre>
+<p>就可以了。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Mac 中homebrew-core的.git文件过大问题解决]]></title>
+        <id>https://axinnixa.github.io/post/mac-zhong-homebrew-core-de-git-wen-jian-guo-da-wen-ti-jie-jue/</id>
+        <link href="https://axinnixa.github.io/post/mac-zhong-homebrew-core-de-git-wen-jian-guo-da-wen-ti-jie-jue/">
+        </link>
+        <updated>2021-02-04T09:24:22.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="http://image.axinblog.com/FjYVhpBO5ZbtkMQ1XKrlO7jYzdxY" alt="homebrew-core文件占用图" loading="lazy"></figure>
+<h1 id="场景还原">场景还原</h1>
+<ul>
+<li>执行过brew update后结果以下目录占用20G</li>
+</ul>
+<blockquote>
+<p>/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core</p>
+</blockquote>
+<ul>
+<li>或执行git 会提示以下信息</li>
+</ul>
+<blockquote>
+<p>warning: There are too many unreachable loose objects; run 'git prune' to remove them.</p>
+</blockquote>
+<h1 id="步骤说明">步骤说明</h1>
+<p>在相应目录下执行</p>
+<blockquote>
+<p>/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core</p>
+</blockquote>
+<blockquote>
+<p>git gc --prune=now</p>
+</blockquote>
+<p>原因：本地的缓冲区占用太大，清理优化该git项目</p>
+<p>清理完成后如下</p>
+<pre><code>➜  homebrew git:(stable) du -sh ./homebrew-core
+ 78M	./homebrew-core
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[微博批量取消关注脚本]]></title>
+        <id>https://axinnixa.github.io/post/wei-bo-pi-liang-qu-xiao-guan-zhu-jiao-ben/</id>
+        <link href="https://axinnixa.github.io/post/wei-bo-pi-liang-qu-xiao-guan-zhu-jiao-ben/">
+        </link>
+        <updated>2021-02-04T09:24:08.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="https://b3logfile.com/bing/20200311.jpg?imageView2/1/w/960/h/540/interlace/1/q/100" alt="" loading="lazy"></figure>
+<h1 id="步骤说明">步骤说明</h1>
+<p>进入关注的页面，选择未分组，不用点批量删除，F12打开控制台，粘贴下面的代码，回车执行</p>
+<pre><code class="language-js">function qxgz()
+{
+document.getElementsByClassName(&quot;btn_link S_txt1&quot;)[0].click();
+var arrs = document.getElementsByClassName(&quot;member_li S_bg1 &quot;);
+for(var i = 0;i&lt;arrs.length;i++){arrs[i].click();}
+document.getElementsByClassName(&quot;W_btn_a&quot;)[1].click();
+document.getElementsByClassName(&quot;W_btn_a btn_34px&quot;)[0].click();
+
+}
+self.setInterval(&quot;qxgz()&quot;,60000);
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[LeetCode Go 之解题]]></title>
+        <id>https://axinnixa.github.io/post/leetcode-go-zhi-jie-ti/</id>
+        <link href="https://axinnixa.github.io/post/leetcode-go-zhi-jie-ti/">
+        </link>
+        <updated>2021-02-04T09:23:51.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="https://b3logfile.com/bing/20200404.jpg?imageView2/1/w/960/h/540/interlace/1/q/100" alt="" loading="lazy"></figure>
+<h1 id="两数之和">两数之和</h1>
+<blockquote>
+<p>给定一个整数数组 nums 和一个目标值 target，请你在该数组中找出和为目标值的那 两个 整数，并返回他们的数组下标。</p>
+</blockquote>
+<p>你可以假设每种输入只会对应一个答案。但是，你不能重复利用这个数组中同样的元素。</p>
+<p>示例:</p>
+<pre><code>给定 nums = [2, 7, 11, 15], target = 9
+
+因为 nums[0] + nums[1] = 2 + 7 = 9
+所以返回 [0, 1]
+</code></pre>
+<h1 id="解题思路">解题思路</h1>
+<blockquote>
+<p>使用hash表存储目标值与数组元素之差（key）和该数组元素的索引（value），当剩余的素组中有元素是hash表中的，则找到了一组符合题目要求的解。</p>
+</blockquote>
+<p><strong>具体思路</strong></p>
+<ol>
+<li>开始循环给定数组nums，获得其中元素的索引index、值num；</li>
+<li>在Hash表中查找是否有值为num的key，若有则找到题解，若没有执行下一步</li>
+<li>将key=target-num,value=index存入Hash表</li>
+<li>进入下一次循环</li>
+</ol>
+<p>注意：将第2步放在第三步前是为了满足“你不能重复利用这个数组中同样的元素”这个条件</p>
+<p><strong>步骤实现</strong></p>
+<pre><code>package main
+
+import &quot;fmt&quot;
+
+func main() {
+	nums := []int{2, 7, 11, 15}
+	target := 9
+	fmt.Println(sum(nums, target))
+}
+
+func sum(nums []int, target int) []int {
+	hM := make(map[int]int, len(nums))
+
+	for index, num := range nums {
+		if value, ok := hM[num]; ok {
+			nums = nums[:2]
+			nums[0] = value
+			nums[1] = index
+			return nums
+		}
+
+		hM[target-num] = index
+	}
+	return nil
+}
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[RocketMQ 安装教程]]></title>
+        <id>https://axinnixa.github.io/post/rocketmq-an-zhuang-jiao-cheng/</id>
+        <link href="https://axinnixa.github.io/post/rocketmq-an-zhuang-jiao-cheng/">
+        </link>
+        <updated>2021-02-04T09:23:36.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="https://b3logfile.com/bing/20200312.jpg?imageView2/1/w/960/h/540/interlace/1/q/100" alt="" loading="lazy"></figure>
+<h1 id="参考文献">参考文献</h1>
+<p><a href="https://github.com/foxiswho/docker-rocketmq">foxiswho/docker-rocketmq</a></p>
+<h1 id="步骤说明">步骤说明</h1>
+<h3 id="一-一键部署-docker-compose">一、一键部署 docker-compose</h3>
+<p>案例 版本 4.7.0</p>
+<pre><code>git clone  https://github.com/foxiswho/docker-rocketmq.git
+
+cd docker-rocketmq
+
+cd rmq
+
+
+chmod +x  start.sh
+
+./start.sh
+</code></pre>
+<p>访问浏览器</p>
+<p>localhost:8180</p>
+<blockquote>
+<p>注意 如果你的微服务或者项目在开发的时候没有放入docker中或者与rocketmq容器不能直接用IP访问， 那么请把broker.conf中的 #brokerIP1=192.168.0.253 前面#号去掉，并且把后面的IP地址改成你的rocketmq容器宿主机IP地址, 否则报 com.alibaba.rocketmq.remoting.exception.RemotingConnectException: connect to <a href="172.0.0.120:10909">172.0.0.120:10909</a> failed 配置文件 在 rmq/rmq/brokerconf 目录下</p>
+</blockquote>
+<h3 id="二-docker-compose-自己构建">二、docker-compose 自己构建</h3>
+<pre><code>有空更新，目前还没尝试
+</code></pre>
+<h3 id="三-常规安装">三、常规安装</h3>
+<pre><code>有空更新，目前还没尝试
+</code></pre>
+<h1 id="注意事项">注意事项</h1>
+<h3 id="事项一">事项一</h3>
+<p>因Centos 7 使用的是firewalld所以要开放相应的端口</p>
+<p>参考：<a href="https://blog.csdn.net/delight_sl/article/details/101107592">RocketMQ 介绍与安装</a></p>
+<pre><code>根据docker-compose中的端口映射开放相应端口
+firewall-cmd --zone=public --add-port=9876/tcp --permanent
+firewall-cmd --zone=public --add-port=10909/tcp --permanent
+firewall-cmd --zone=public --add-port=10911/tcp --permanent
+firewall-cmd --zone=public --add-port=10912/tcp --permanent
+
+# 更新防火墙规则使之生效
+firewall-cmd --reload
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[docker-compose 快速构建公司局域网DNS服务器]]></title>
+        <id>https://axinnixa.github.io/post/docker-compose-kuai-su-gou-jian-gong-si-ju-yu-wang-dns-fu-wu-qi/</id>
+        <link href="https://axinnixa.github.io/post/docker-compose-kuai-su-gou-jian-gong-si-ju-yu-wang-dns-fu-wu-qi/">
+        </link>
+        <updated>2021-02-04T09:23:20.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="https://b3logfile.com/bing/20180619.jpg?imageView2/1/w/960/h/540/interlace/1/q/100" alt="" loading="lazy"></figure>
+<h1 id="参考文献">参考文献</h1>
+<p><a href="https://github.com/jpillora/docker-dnsmasq">docker-dnsmasq</a></p>
+<h1 id="环境说明">环境说明</h1>
+<ul>
+<li>Centos 7</li>
+<li>docker-compose</li>
+<li>192.168.50.100 为DNS服务器所在</li>
+<li>192.168.50.101 为目的服务器</li>
+</ul>
+<h1 id="步骤说明">步骤说明</h1>
+<h4 id="1编辑env文件增加登录dns-web-页账号密码配置">1.编辑.env文件增加登录dns web 页账号密码配置</h4>
+<pre><code>############### Dns #################
+TZ=Asia/Shanghai
+HTTP_USER=root
+HTTP_PASS=root
+</code></pre>
+<h4 id="2在docker主机上创建文件dnsmasqconf">2.在Docker主机上创建文件<a href="http://oss.segetech.com/intra/srv/dnsmasq.conf">/dnsmasq.conf</a></h4>
+<p>以下为内容跟github中的一致，这里只是做测试：</p>
+<pre><code>#dnsmasq config, for a complete example, see:
+#  http://oss.segetech.com/intra/srv/dnsmasq.conf
+#log all dns queries
+log-queries
+#dont use hosts nameservers
+no-resolv
+#use cloudflare as default nameservers, prefer 1^4
+server=1.0.0.1
+server=1.1.1.1
+strict-order
+#serve all .company queries using a specific nameserver
+server=/company/10.0.0.1
+#explicitly define host-ip mappings
+address=/myhost.company/10.0.0.2
+</code></pre>
+<h4 id="3编辑docker-composeyml增加dns_server">3.编辑docker-compose.yml增加dns_server</h4>
+<pre><code>dns_server:
+    container_name: dp_dns_server
+    image: 'jpillora/dnsmasq'
+    restart: always
+    environment:
+      - TZ=${TZ}
+      - HTTP_USER=${HTTP_USER}
+      - HTTP_PASS=${HTTP_PASS}
+    ports:
+      - &quot;53:53/tcp&quot;
+      - &quot;53:53/udp&quot;
+      - &quot;8090:8080&quot;
+    volumes:
+      - &quot;./services/dns/dnsmasq.conf:/etc/dmZsmasq.conf&quot;
+</code></pre>
+<h4 id="4启动docker-compose并进入管理平台">4.启动docker-compose并进入管理平台</h4>
+<p>$ docker-compse up -d</p>
+<p>访问192.168.50.100:8090进入web管理页面</p>
+<figure data-type="image" tabindex="2"><img src="http://image.axinblog.com/FgA3IUNz_fzqwPYIvXPWqmri4rVT-www.axinblog.com" alt="dns服务web界面.png" loading="lazy"></figure>
+<h4 id="5测试内网访问">5.测试内网访问</h4>
+<p>增加一条域名映射</p>
+<pre><code>#test www.axinblog.com
+address=/sos.axinblog.com/192.168.50.101
+</code></pre>
+<p>此映射是映射到局域网内的一台主机（IP根据你们自己的网络进行更改）点Save保存</p>
+<figure data-type="image" tabindex="3"><img src="http://image.axinblog.com/FjRSWe0zmkYtavw3Qz6Z4qpt2yEm-www.axinblog.com" alt="保存映射规则.png" loading="lazy"></figure>
+<p>更改局域网内另一台Centos 7 主机DNS配置</p>
+<pre><code>$ vim /etc/resolv.conf
+nameserver 192.168.50.100（这是你搭建dns_server服务器IP）
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+</code></pre>
+<p>ping sos.axinblog.com 测试映射结果</p>
+<figure data-type="image" tabindex="4"><img src="http://image.axinblog.com/Fl9xyx1Naf7v5HkSWXKLx_6z_SkO-www.axinblog.com" alt="映射结果.png" loading="lazy"></figure>
+<p>成功 ping 通192.168.50.101表示成功</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[随心散文]]></title>
+        <id>https://axinnixa.github.io/post/sui-xin-san-wen/</id>
+        <link href="https://axinnixa.github.io/post/sui-xin-san-wen/">
+        </link>
+        <updated>2021-02-04T09:23:00.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="https://b3logfile.com/bing/20190426.jpg?imageView2/1/w/960/h/540/interlace/1/q/100" alt="" loading="lazy"></figure>
+<pre><code>我曾踏足山巅，也曾进入低谷，二者都让我受益良多。
+							—— 瓦罗兰之盾塔里克 《英雄联盟》
+		
+	同行
+檐前早课声，淡然又七年。
+少壮能几时，醉酒笑谈情。
+兄弟齐心力，前行路自平。
+今朝任风雨，暮年不悔心。
+							—— axin www.axinblog.com
+
+业精于勤，荒于嬉；行成于思，毁于随。
+							——（唐）韩愈《进学解》
+
+等我完成了今生的任务，将来送走了父母，将我生的儿女抚养大了，那个时候了无牵挂，
+我就去流浪，不给孩子们添麻烦，走那是那，死那算那！因为这一生太苦太累了，世界
+无论多少美好，下辈子再也不来了
+							—— 抖音@风吹帽儿落
+
+适应者生存，管他漫身伤痕。
+							—— axin www.axinblog.com
+
+    征途
+铜锈路，长漫漫。
+恍然间，悄梦碎。
+撕留恋，淡安然。
+霸之愚，虞泪殇。
+漫身痕，适者存。
+笑应世，躬立行。
+							—— axin www.axinblog.com
+
+
+忠言逆耳利于行，良药苦口利于病。有的人真诚指出错误你不听，有的人口蜜腹剑你却高兴。
+							——人性的弱点
+
+人之患在好为人师，
+但，
+人生如海，病蚌成珠。
+如果你因为我的话感谢我，我也愿你戴上这珍珠后，美丽庄重，宛若画中人。
+							—— 知乎
+
+独在异乡为异客，每逢佳节倍思亲。
+							——出自唐代[王维]的《九月九日忆山东兄弟》
+
+我们可以仰望星空，但也要学会理解尘埃
+							——[Seasee Youl]知乎
+
+随着年纪越来越大，能和别人说的心里话越少。你身上的担子和面具越来越多，越来越重，你也越来越放不下他们。不是你不愿放下，而且戴久了，他们已经成了你的一部分。
+
+花有重开日，人无再少年。
+相逢拌酩酊，何必备芳鲜。
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[SpringBoot使用mongoTemplate时注意事项]]></title>
+        <id>https://axinnixa.github.io/post/springboot-shi-yong-mongotemplate-shi-zhu-yi-shi-xiang/</id>
+        <link href="https://axinnixa.github.io/post/springboot-shi-yong-mongotemplate-shi-zhu-yi-shi-xiang/">
+        </link>
+        <updated>2021-02-04T09:22:44.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="https://b3logfile.com/bing/20191202.jpg?imageView2/1/w/960/h/540/interlace/1/q/100" alt="" loading="lazy"></figure>
+<h1 id="参考文献">参考文献</h1>
+<p><a href="https://stackoverflow.com/questions/39001955/spring-data-mongotemplate-save-behaviour">Spring Data mongoTemplate.save() behaviour</a></p>
+<p><a href="https://blog.csdn.net/zongzhankui/article/details/78764665">Spring Data MongoDB更新</a></p>
+<h1 id="问题还原">问题还原</h1>
+<p>项目开发过程中使用到了Spring Data操作Mongo<br>
+例：根据id更新sku数据</p>
+<blockquote>
+<p>mongoTemplate.save(sku)</p>
+</blockquote>
+<p>原文档</p>
+<pre><code>{ 
+    &quot;_id&quot; : ObjectId(&quot;5ef9a63c1dd6b500c38eb784&quot;), 
+    &quot;product_id&quot; : ObjectId(&quot;5ef952254538f17296470d6f&quot;), 
+    &quot;sku_attr_id&quot; : ObjectId(&quot;5ef9a5c11dd6b500c38eb781&quot;), 
+    &quot;barcode&quot;: [&quot;15134643623&quot;],
+    &quot;rrp&quot; : NumberDecimal(&quot;1588.00&quot;), 
+    &quot;default_warning_qty&quot; : NumberInt(60), 
+    &quot;default_replenish_qty&quot; : NumberInt(10), 
+    &quot;create_time&quot; : NumberLong(0), 
+    &quot;update_time&quot; : NumberLong(1593683512413), 
+    &quot;delete_time&quot; : NumberLong(0)
+}
+</code></pre>
+<p>代码执行操作<code>kotlin伪代码</code></p>
+<pre><code class="language-koltin">val productSku = ProductSku()
+productSku.id = ObjectId(spec.skuId)
+productSku.defaultWarningQty = spec.defaultWarningQty
+mongoTemplate.save(ProductSku)
+</code></pre>
+<p>运行后文档丢失数据</p>
+<pre><code>{ 
+    &quot;_id&quot; : ObjectId(&quot;5ef9a63c1dd6b500c38eb784&quot;), 
+    &quot;default_warning_qty&quot; : NumberInt(60)
+}
+</code></pre>
+<h1 id="解决步骤">解决步骤</h1>
+<p>更新整个对象使用<code>save()</code></p>
+<p>更新某个字段而不是整个对象请使用<code>updateFirst()</code>或者<code>updateMulti()</code>，而不是<code>save()</code></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[VMWare 虚拟机克隆，创建多台Centos 7]]></title>
+        <id>https://axinnixa.github.io/post/vmware-xu-ni-ji-ke-long-chuang-jian-duo-tai-centos-7/</id>
+        <link href="https://axinnixa.github.io/post/vmware-xu-ni-ji-ke-long-chuang-jian-duo-tai-centos-7/">
+        </link>
+        <updated>2021-02-04T09:22:20.000Z</updated>
+        <content type="html"><![CDATA[<figure data-type="image" tabindex="1"><img src="http://image.axinblog.com/Fs4a-cOJ0a-mnq0A4LYq_C2TeEfy-www.axinblog.com" alt="u40449792782284392263fm26gp0.jpg" loading="lazy"></figure>
+<h1 id="环境说明">环境说明</h1>
+<ul>
+<li>Centos 7</li>
+<li>VMWare 14</li>
+<li>Win10</li>
+</ul>
+<h1 id="步骤说明">步骤说明</h1>
+<h3 id="克隆">克隆</h3>
+<blockquote>
+<p>嗯，这张图纯粹就是不小心上传的。</p>
+</blockquote>
+<figure data-type="image" tabindex="2"><img src="http://image.axinblog.com/Fiag2-agf1Hxh_9ULkoP6ef8SQTE-www.axinblog.com" alt="1.png" loading="lazy"></figure>
+<blockquote>
+<p>虚拟机-&gt;管理-&gt;克隆</p>
+</blockquote>
+<figure data-type="image" tabindex="3"><img src="http://image.axinblog.com/FijJgema8EB4pHn6iK2D37ibU0Fx-www.axinblog.com" alt="2.png" loading="lazy"></figure>
+<blockquote>
+<p>下一步</p>
+</blockquote>
+<figure data-type="image" tabindex="4"><img src="http://image.axinblog.com/FtdDDhoeURe3WPpspPnHRLL1T8oi-www.axinblog.com" alt="3.png" loading="lazy"></figure>
+<blockquote>
+<p>选择“虚拟机中的当前状态”-&gt;下一步</p>
+</blockquote>
+<figure data-type="image" tabindex="5"><img src="http://image.axinblog.com/FoyTNNxg23P0e1ZwMrYlDefpFt1p-www.axinblog.com" alt="4.png" loading="lazy"></figure>
+<blockquote>
+<p>选择“创建完整克隆”-&gt;下一步</p>
+</blockquote>
+<figure data-type="image" tabindex="6"><img src="http://image.axinblog.com/Fse3WQeOChLrYXNH5MyCr4kbqT3H-www.axinblog.com" alt="5.png" loading="lazy"></figure>
+<blockquote>
+<p>输入新虚拟机的名称-&gt;点完成</p>
+</blockquote>
+<figure data-type="image" tabindex="7"><img src="http://image.axinblog.com/FtrqFt6rxox02qqrYoaVLE-RZ-pS-www.axinblog.com" alt="6.png" loading="lazy"></figure>
+<blockquote>
+<p>等待一会就可以看到克隆的虚拟机了</p>
+</blockquote>
+<figure data-type="image" tabindex="8"><img src="http://image.axinblog.com/FsJGS5XZmpP7hFvxBMPFMPYXAwv2-www.axinblog.com" alt="7.png" loading="lazy"></figure>
+<h3 id="配置">配置</h3>
+<p>因为克隆的虚拟机IP是一样的，所以还要改下每台虚拟机的IP</p>
+<p>修改Centos 7网络配置</p>
+<blockquote>
+<p>vim /etc/sysconfig/network-scripts/ifcfg-ens33</p>
+</blockquote>
+<p>以下为我的配置（根据自己的网络修改）</p>
+<pre><code>BOOTPROTO=static
+ONBOOT=yes
+IPADDR=192.168.50.100（其他两台Centos网络配置：IPADDR=192.168.50.101，IPADDR=192.168.50.102）
+NETMASH=255.255.255.0
+GATEWAY=192.168.50.1
+</code></pre>
+<blockquote>
+<p>wq 保存如下</p>
+</blockquote>
+<pre><code>TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=static
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+NAME=ens33
+UUID=733f76f6-d10d-44ca-8441-7593fa913b0b
+DEVICE=ens33
+ONBOOT=yes
+IPADDR=192.168.50.100
+NETMASH=255.255.255.0
+GATEWAY=192.168.50.1
+</code></pre>
 ]]></content>
     </entry>
 </feed>
